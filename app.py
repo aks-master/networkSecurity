@@ -45,44 +45,54 @@ app.add_middleware(
 )
 
 from fastapi.templating import Jinja2Templates
+from fastapi.responses import FileResponse
 templates = Jinja2Templates(directory="./templates")
 
 @app.get("/", tags=["authentication"])
 async def index():
     return RedirectResponse(url="/docs")
 
-@app.get("/train")
-async def train_route():
-    try:
-        train_pipeline=TrainingPipeline()
-        train_pipeline.run_pipeline()
-        return Response("Training is successful")
-    except Exception as e:
-        raise NetworkSecurityException(e,sys)
+# @app.get("/train")
+# async def train_route():
+#     try:
+#         train_pipeline=TrainingPipeline()
+#         train_pipeline.run_pipeline()
+#         return Response("Training is successful")
+#     except Exception as e:
+#         raise NetworkSecurityException(e,sys)
     
 @app.post("/predict")
-async def predict_route(request: Request,file: UploadFile = File(...)):
+async def predict_route(request: Request, file: UploadFile = File(...)):
     try:
-        df=pd.read_csv(file.file)
-        #print(df)
-        preprocesor=load_object("final_model/preprocessor.pkl")
-        final_model=load_object("final_model/model.pkl")
-        network_model = NetworkModel(preprocessor=preprocesor,model=final_model)
-        print(df.iloc[0])
+        df = pd.read_csv(file.file)
+        preprocesor = load_object("final_model/preprocessor.pkl")
+        final_model = load_object("final_model/model.pkl")
+        network_model = NetworkModel(preprocessor=preprocesor, model=final_model)
         y_pred = network_model.predict(df)
-        print(y_pred)
         df['predicted_column'] = y_pred
-        print(df['predicted_column'])
-        #df['predicted_column'].replace(-1, 0)
-        #return df.to_json()
-        df.to_csv('prediction_output/output.csv')
+        output_path = 'prediction_output/output.csv'
+        df.to_csv(output_path, index=False)
         table_html = df.to_html(classes='table table-striped')
-        #print(table_html)
-        return templates.TemplateResponse("table.html", {"request": request, "table": table_html})
-        
+        # Provide download link in the rendered template
+        return templates.TemplateResponse(
+            "table.html",
+            {
+                "request": request,
+                "table": table_html,
+                "download_link": "/download_csv"
+            }
+        )
     except Exception as e:
-            raise NetworkSecurityException(e,sys)
+        raise NetworkSecurityException(e, sys)
 
+@app.get("/download_csv")
+async def download_csv():
+    output_path = 'prediction_output/output.csv'
+    return FileResponse(
+        path=output_path,
+        filename="output.csv",
+        media_type="text/csv"
+    )
     
 if __name__=="__main__":
     app_run(app,host="0.0.0.0",port=8000)

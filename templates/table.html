@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Data Table</title>
     <style>
@@ -7,15 +8,20 @@
             border-collapse: collapse;
             width: 100%;
         }
-        th, td {
+
+        th,
+        td {
             border: 1px solid black;
             padding: 8px;
             text-align: left;
         }
     </style>
 </head>
+
 <body>
+    <a href="{{ download_link }}" class="btn btn-primary">Download CSV</a>
     <h2>Predicted Data</h2>
     {{ table | safe }}
 </body>
+
 </html>
