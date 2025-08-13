@@ -81,7 +81,7 @@ jobs:
 
       - name: Removing all running containers
         run: |
-          docker rm -f $(docker ps -q)
+          docker container ls -aq | xargs -r docker rm -f
        
       - name: Run Docker Image to serve users
         run: |
